@@ -143,16 +143,16 @@ impl DurableState for PageState {
         let mut data = self.data.lock().unwrap();
         let chunks = data
             .copy_builds
-            .remove(build_id)
+            .get(build_id)
             .ok_or_else(|| RuntimeError::Application("copy contained no page snapshot".into()))?;
         let mut snapshot = Vec::new();
-        for (expected, (sequence, chunk)) in chunks.into_iter().enumerate() {
-            if sequence != expected as u64 {
+        for (expected, (sequence, chunk)) in chunks.iter().enumerate() {
+            if *sequence != expected as u64 + 1 {
                 return Err(RuntimeError::Application(
                     "copy page snapshot had a sequence gap".into(),
                 ));
             }
-            snapshot.extend_from_slice(&chunk);
+            snapshot.extend_from_slice(chunk);
         }
         let page = decode_snapshot(&snapshot)?;
         data.page = page.clone();
@@ -294,5 +294,54 @@ fn decode_snapshot(snapshot: &[u8]) -> Result<Option<Bytes>> {
         _ => Err(RuntimeError::Application(
             "copy page snapshot has an invalid encoding".into(),
         )),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use kuberic_runtime::application::CopyChunk;
+    use kuberic_runtime::engine::DurableState;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn copy_uses_one_based_sequences_and_completion_is_retryable() {
+        let state = PageState::default();
+        let build = OperationId::new("copy");
+        state
+            .apply_copy_chunk(
+                &build,
+                1,
+                CopyChunk {
+                    data: Bytes::from_static(&[0]),
+                },
+            )
+            .await
+            .unwrap();
+
+        let first = state.finish_copy(&build, 4, 3).await.unwrap();
+        let retry = state.finish_copy(&build, 4, 3).await.unwrap();
+
+        assert_eq!(first, retry);
+        assert_eq!(state.page(), None);
+    }
+
+    #[tokio::test]
+    async fn copy_distinguishes_absent_page_from_present_empty_page() {
+        let state = PageState::default();
+        let build = OperationId::new("empty-page-copy");
+        state
+            .apply_copy_chunk(
+                &build,
+                1,
+                CopyChunk {
+                    data: Bytes::from_static(&[1]),
+                },
+            )
+            .await
+            .unwrap();
+        state.finish_copy(&build, 1, 1).await.unwrap();
+
+        assert_eq!(state.page(), Some(Bytes::new()));
     }
 }
