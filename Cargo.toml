@@ -1,13 +1,15 @@
-[package]
-name = "kuberic-page"
+[workspace]
+resolver = "2"
+members = ["kuberic-page"]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.85"
 license = "MIT"
-description = "A one-page replicated Kuberic application"
 repository = "https://github.com/youyuanwu/kuberic-apps"
+rust-version = "1.85"
 
-[dependencies]
+[workspace.dependencies]
 anyhow = "1"
 async-trait = "0.1"
 axum = "0.8"
@@ -15,10 +17,7 @@ bytes = "1"
 clap = { version = "4", features = ["derive", "env"] }
 futures = "0.3"
 kuberic-runtime = "=0.0.1"
-tokio = { version = "1", features = ["full"] }
-tracing-subscriber = "0.3"
-
-[dev-dependencies]
-kuberic-runtime = { version = "=0.0.1", features = ["testing"] }
 tempfile = "3"
+tokio = { version = "1", features = ["full"] }
 tower = { version = "0.5", features = ["util"] }
+tracing-subscriber = "0.3"
