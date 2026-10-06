@@ -13,7 +13,7 @@ Page bodies are opaque bytes, including an empty body. There are no additional k
 
 ## Build and test
 
-Rust 1.85 or newer is required.
+Rust 1.85 or newer and `protoc` are required.
 
 ```sh
 cargo build -p kuberic-page

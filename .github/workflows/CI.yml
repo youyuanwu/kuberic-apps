@@ -26,6 +26,8 @@ jobs:
           components: rustfmt, clippy
           build-warnings: ""
 
+      - uses: taiki-e/install-action@protoc
+
       - name: Format
         run: cargo fmt --all -- --check
 
