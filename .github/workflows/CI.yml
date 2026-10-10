@@ -37,10 +37,19 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Check workspace
-        run: cargo check --workspace --all-targets --all-features
+        run: cargo check --locked --workspace --all-targets --all-features
 
       - name: Lint workspace
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+        run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
 
       - name: Test workspace
-        run: cargo test --workspace --all-features -- --test-threads=2
+        run: cargo test --locked --workspace --all-features -- --test-threads=2
+
+  rustfs-native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build and test pinned Linux native artifacts
+        run: docker build --file kuberic-rustfs/Dockerfile --tag kuberic-rustfs:ci .
